@@ -34,18 +34,20 @@ export const metadata = {
   }
 }
 
-const RootLayout = ({ children }) => {
-  return (
-    <html lang='en' suppressHydrationWarning>
-      <body>
+import MsalProviderGate from './msal-provider-gate'
+
+const RootLayout = ({ children }) => (
+  <html lang='en' suppressHydrationWarning>
+    <body>
+      <MsalProviderGate>
         <Provider>
           <NavigationEvents />
           <Layout>{children}</Layout>
         </Provider>
         <StyledToast />
-      </body>
-    </html>
-  )
-}
+      </MsalProviderGate>
+    </body>
+  </html>
+)
 
 export default RootLayout

@@ -36,6 +36,14 @@ public class WebUIFilter implements Filter {
     HttpServletRequest httpRequest = (HttpServletRequest) request;
     String path = httpRequest.getRequestURI();
     String lastPathSegment = path.substring(path.lastIndexOf("/") + 1);
+
+    // Allow public access to auth configuration endpoints and OAuth flow endpoints
+    if (path.equals("/configs")) {
+      // Continue processing without authentication for auth config and OAuth endpoints
+      chain.doFilter(request, response);
+      return;
+    }
+
     if (path.equals("/") || path.equals("/ui") || path.equals("/ui/")) {
       // Redirect to the index page.
       httpRequest.getRequestDispatcher("/ui/index.html").forward(request, response);
