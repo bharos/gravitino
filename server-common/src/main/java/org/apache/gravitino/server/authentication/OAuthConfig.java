@@ -74,92 +74,39 @@ public interface OAuthConfig {
           .checkValue(StringUtils::isNotBlank, ConfigConstants.NOT_BLANK_ERROR_MSG)
           .create();
 
-<<<<<<< HEAD
-  // Extensible OAuth provider configs
+  // OAuth provider configs
   ConfigEntry<String> PROVIDER =
       new ConfigBuilder(OAUTH_CONFIG_PREFIX + "provider")
           .doc("The OAuth provider to use (e.g., azure)")
-          .version(ConfigConstants.VERSION_0_3_0)
+          .version(ConfigConstants.VERSION_1_0_0)
           .stringConf()
           .create();
 
-  // Azure-specific configs
-  ConfigEntry<String> AZURE_CLIENT_ID =
-      new ConfigBuilder(OAUTH_CONFIG_PREFIX + "azure.client-id")
-          .doc("Azure OAuth client ID")
-          .version(ConfigConstants.VERSION_0_3_0)
-          .stringConf()
-          .create();
-
-  ConfigEntry<String> AZURE_AUTHORITY =
-      new ConfigBuilder(OAUTH_CONFIG_PREFIX + "azure.authority")
-          .doc("Azure OAuth authority URL")
-          .version(ConfigConstants.VERSION_0_3_0)
-          .stringConf()
-          .create();
-
-  ConfigEntry<String> AZURE_REDIRECT_URI =
-      new ConfigBuilder(OAUTH_CONFIG_PREFIX + "azure.redirect-uri")
-          .doc("Azure OAuth redirect URI")
-          .version(ConfigConstants.VERSION_0_3_0)
-          .stringConf()
-          .create();
-
-  ConfigEntry<String> AZURE_JWKS_URI =
-      new ConfigBuilder(OAUTH_CONFIG_PREFIX + "azure.jwks-uri")
-          .doc("Azure JWKS URI for token validation")
-          .version(ConfigConstants.VERSION_0_3_0)
-          .stringConf()
-          .create();
-
-  ConfigEntry<String> AZURE_SCOPE =
-      new ConfigBuilder(OAUTH_CONFIG_PREFIX + "azure.scope")
-          .doc("Azure OAuth scopes")
-          .version(ConfigConstants.VERSION_0_3_0)
-=======
-  // Standard OAuth 2.0 / OIDC configs (compatible with all providers)
   ConfigEntry<String> CLIENT_ID =
       new ConfigBuilder(OAUTH_CONFIG_PREFIX + "client-id")
-          .doc("OAuth client ID for web UI authentication (public client)")
+          .doc("OAuth client ID used for Web UI authentication")
           .version(ConfigConstants.VERSION_1_0_0)
           .stringConf()
           .create();
 
-  ConfigEntry<String> ISSUER_URL =
-      new ConfigBuilder(OAUTH_CONFIG_PREFIX + "issuer-url")
-          .doc("OAuth issuer URL (authority URL for the OAuth provider)")
-          .version(ConfigConstants.VERSION_1_0_0)
-          .stringConf()
-          .checkValue(StringUtils::isNotBlank, ConfigConstants.NOT_BLANK_ERROR_MSG)
-          .create();
-
-  ConfigEntry<String> JWKS_URI =
-      new ConfigBuilder(OAUTH_CONFIG_PREFIX + "jwks-uri")
-          .doc("JWKS URI for JWT token validation")
-          .version(ConfigConstants.VERSION_1_0_0)
-          .stringConf()
-          .create();
-
-  ConfigEntry<String> REDIRECT_URI =
-      new ConfigBuilder(OAUTH_CONFIG_PREFIX + "redirect-uri")
-          .doc("OAuth redirect URI for web UI authentication")
+  ConfigEntry<String> AUTHORITY =
+      new ConfigBuilder(OAUTH_CONFIG_PREFIX + "authority")
+          .doc("OAuth authority URL (authorization server)")
           .version(ConfigConstants.VERSION_1_0_0)
           .stringConf()
           .create();
 
   ConfigEntry<String> SCOPE =
       new ConfigBuilder(OAUTH_CONFIG_PREFIX + "scope")
-          .doc("OAuth scopes for web UI authentication (space-separated)")
+          .doc("OAuth scopes (space-separated)")
           .version(ConfigConstants.VERSION_1_0_0)
           .stringConf()
-          .createWithDefault("openid profile email");
+          .create();
 
-  // Optional provider identifier for any provider-specific logic
-  ConfigEntry<String> PROVIDER =
-      new ConfigBuilder(OAUTH_CONFIG_PREFIX + "provider")
-          .doc("OAuth provider identifier (e.g., azure, google, okta) - optional")
+  ConfigEntry<String> JWKS_URI =
+      new ConfigBuilder(OAUTH_CONFIG_PREFIX + "jwks-uri")
+          .doc("JWKS URI for token validation")
           .version(ConfigConstants.VERSION_1_0_0)
->>>>>>> dc0ab9b26 (Adding configs for Azure OAuth login)
           .stringConf()
           .create();
 }
