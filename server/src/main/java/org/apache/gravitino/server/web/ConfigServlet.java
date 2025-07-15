@@ -40,7 +40,11 @@ public class ConfigServlet extends HttpServlet {
   private static final Logger LOG = LoggerFactory.getLogger(ConfigServlet.class);
 
   private static final ImmutableSet<ConfigEntry<?>> oauthConfigEntries =
-      ImmutableSet.of(OAuthConfig.DEFAULT_SERVER_URI, OAuthConfig.DEFAULT_TOKEN_PATH);
+      ImmutableSet.of(
+          OAuthConfig.CLIENT_ID,
+          OAuthConfig.ISSUER_URL,
+          OAuthConfig.SCOPE,
+          OAuthConfig.PROVIDER);
 
   private static final ImmutableSet<ConfigEntry<?>> basicConfigEntries =
       ImmutableSet.of(Configs.AUTHENTICATORS, Configs.ENABLE_AUTHORIZATION);
