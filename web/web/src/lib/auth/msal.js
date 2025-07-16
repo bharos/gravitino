@@ -77,7 +77,9 @@ export async function getAccessToken(scopes = ['user.read']) {
   const accounts = instance.getAllAccounts()
 
   if (accounts.length === 0) {
-    throw new Error('No MSAL account found. User might not be logged in.')
+    console.warn('[MSAL] No accounts found. User may not be logged in.')
+
+    return null
   }
 
   const request = {
@@ -99,7 +101,8 @@ export async function getAccessToken(scopes = ['user.read']) {
       return response.accessToken
     } catch (interactiveError) {
       console.error('Interactive token acquisition failed', interactiveError)
-      throw interactiveError
+
+      return null
     }
   }
 }

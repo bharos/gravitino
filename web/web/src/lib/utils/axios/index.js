@@ -276,7 +276,7 @@ const transform = {
     checkStatus(response?.status, msg, errorMessageMode)
 
     // Skip auto-refresh for some URLs
-    const skipAutoRefreshUrls = ['/api/oauth/config', '/configs']
+    const skipAutoRefreshUrls = ['/configs']
 
     const shouldSkipAutoRefresh = skipAutoRefreshUrls.some(url => originConfig?.url?.includes(url))
 
