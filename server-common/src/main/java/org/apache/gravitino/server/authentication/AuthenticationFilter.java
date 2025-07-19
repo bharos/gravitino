@@ -59,10 +59,7 @@ public class AuthenticationFilter implements Filter {
     String path = httpRequest.getRequestURI();
 
     // Allow public access to auth configuration endpoints and OAuth flow endpoints
-    if (path.equals("/configs")
-        || path.equals("/api/oauth/config")
-        || path.equals("/api/oauth/authorize")
-        || path.equals("/api/oauth/callback")) {
+    if (path.equals("/configs")) {
       chain.doFilter(request, response);
       return;
     }

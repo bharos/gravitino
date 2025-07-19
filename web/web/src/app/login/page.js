@@ -77,8 +77,20 @@ function LoginButton() {
   const { instance } = useMsal()
 
   const handleLogin = () => {
+    const config = getMsalConfig()
+    if (!config) {
+      console.error('[Login] MSAL config not available')
+
+      return
+    }
+
+    // Include both authentication scopes and API scope for consent
+    const scopes = ['openid', 'email', 'offline_access', 'User.Read', `api://${config.auth.clientId}/access_as_user`]
+
+    console.info('[Login] Requesting login with scopes:', scopes)
+
     instance.loginRedirect({
-      scopes: getMsalConfig().auth.scope
+      scopes: scopes
     })
   }
 

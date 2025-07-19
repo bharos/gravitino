@@ -27,7 +27,9 @@ plugins {
 dependencies {
   compileOnly(project(":api"))
   compileOnly(project(":catalogs:catalog-fileset"))
+  compileOnly(project(":common"))
   compileOnly(project(":core"))
+  compileOnly(project(":server-common"))
   compileOnly(libs.hadoop3.abs)
   compileOnly(libs.hadoop3.client.api)
   compileOnly(libs.hadoop3.client.runtime)
@@ -41,6 +43,7 @@ dependencies {
 
   implementation(libs.azure.identity)
   implementation(libs.azure.storage.file.datalake)
+  implementation(libs.nimbus.jose.jwt)
 
   implementation(libs.commons.lang3)
   // runtime used
@@ -48,7 +51,9 @@ dependencies {
   implementation(libs.guava)
 
   testImplementation(project(":api"))
+  testImplementation(project(":common"))
   testImplementation(project(":core"))
+  testImplementation(project(":server-common"))
   testImplementation(libs.junit.jupiter.api)
   testImplementation(libs.junit.jupiter.params)
   testRuntimeOnly(libs.junit.jupiter.engine)

@@ -29,6 +29,14 @@ export async function initMsal() {
       const configs = await response.json()
       console.log('[MSAL] Received config:', configs)
 
+      if (configs['gravitino.authenticator.oauth.provider'] !== 'azure') {
+        console.warn('[MSAL] Provider is not azure. Skipping MSAL initialization.')
+        msalConfig = null
+        msalInstance = null
+
+        return null
+      }
+
       msalConfig = {
         auth: {
           clientId: configs['gravitino.authenticator.oauth.azure.client-id'],
@@ -44,6 +52,8 @@ export async function initMsal() {
       msalInstance = new PublicClientApplication(msalConfig)
       await msalInstance.initialize()
 
+      localStorage.setItem('oauthProvider', configs['gravitino.authenticator.oauth.provider'])
+
       return msalInstance
     } catch (err) {
       configPromise = null // allow retry
@@ -58,7 +68,9 @@ export async function initMsal() {
 
 export function getMsalInstance() {
   if (!msalInstance) {
-    throw new Error('[MSAL] Instance not initialized. Call initMsal() first.')
+    console.error('[MSAL] Instance not initialized. Call initMsal() first.')
+
+    return null
   }
 
   return msalInstance
@@ -72,8 +84,29 @@ export function getMsalConfig() {
   return msalConfig
 }
 
-export async function getAccessToken(scopes = ['user.read']) {
+export async function getGravitinoAccessToken() {
+  const config = getMsalConfig()
+  if (!config) {
+    console.error('[MSAL] Config not available.')
+
+    return null
+  }
+
+  // Use the API scope created by networking admin
+  const apiScopes = [`api://${config.auth.clientId}/access_as_user`]
+  console.info('[MSAL] Requesting token for Gravitino API with scope:', apiScopes[0])
+
+  return await getAccessToken(apiScopes)
+}
+
+export async function getAccessToken(scopes = ['User.Read']) {
   const instance = getMsalInstance()
+  if (!instance) {
+    console.error('[MSAL] Instance not available.')
+
+    return null
+  }
+
   const accounts = instance.getAllAccounts()
 
   if (accounts.length === 0) {
@@ -83,7 +116,7 @@ export async function getAccessToken(scopes = ['user.read']) {
   }
 
   const request = {
-    scopes,
+    scopes: scopes,
     account: accounts[0]
   }
 
