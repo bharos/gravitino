@@ -45,6 +45,9 @@ dependencies {
   // please see: https://stackoverflow.com/questions/46493613/what-is-the-replacement-for-javax-activation-package-in-java-9
   implementation(libs.sun.activation)
 
+  // Runtime dependency for Azure OAuth support
+  runtimeOnly(project(":bundles:azure", configuration = "shadow"))
+
   annotationProcessor(libs.lombok)
   compileOnly(libs.lombok)
   testAnnotationProcessor(libs.lombok)
