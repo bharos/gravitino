@@ -201,7 +201,7 @@ authenticators: simple
 ##
 authenticator:
   oauth:
-    serviceAudience: test
+    serviceAudience: "6e8e8cd2-75c6-480b-be71-c45227f622f2"
     defaultSignKey: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApWEpB+2wL0g1qBtqzIt5ZqAoSdr89ZmadvWs3xYvx56GimYf4Bo6FrjvKzK7esBDOsb7tPTM52NngvumnrOiBcPzzyV/9bD7C21fR8aGnlslZpusJcH8BM+C+pdaggzeyx2WaxEzzOqZ8upxtvRgxZiyMVwQMSa+CYvY/weCBZG7E7nfZ6sNzCncQir9NFodfVZw99uUMAdu7G2JNkTPUakbgRUk3zX3N2u/yPT+/y8EqdF7MANrBNnPa2lMQ2d216/UHgZzkIFbZk/IHjW0h59DLTRFr0BmPQtxkG+Kt9ePV3TSB8WXvqEwocle36vwnFSPvAptpQbGnHUMg8XJbwIDAQAB"
     serverUri: "http://oauth-server.dev.de.gcp.rokulabs.net"
     tokenPath: "/oauth2/token"
@@ -224,7 +224,7 @@ authenticator:
       authority: "https://login.microsoftonline.com/00fc7e42-ad65-4c4c-ab54-848ba124a5b7"
       redirectUri: "http://localhost:8090/ui/oauth/callback"
       jwksUri: "https://login.microsoftonline.com/00fc7e42-ad65-4c4c-ab54-848ba124a5b7/discovery/v2.0/keys"
-      scope: "openid profile email"
+      scope: "api://6e8e8cd2-75c6-480b-be71-c45227f622f2/.default"
 
 ## Audit log configuration
 ##
