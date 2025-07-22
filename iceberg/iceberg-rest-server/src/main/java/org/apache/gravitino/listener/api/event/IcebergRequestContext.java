@@ -21,11 +21,16 @@ package org.apache.gravitino.listener.api.event;
 
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+import org.apache.gravitino.UserPrincipal;
+import org.apache.gravitino.auth.AuthConstants;
 import org.apache.gravitino.iceberg.service.IcebergRestUtils;
 import org.apache.gravitino.utils.PrincipalUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** The general request context information for Iceberg REST operations. */
 public class IcebergRequestContext {
+  private static final Logger LOG = LoggerFactory.getLogger(IcebergRequestContext.class);
 
   /**
    * @deprecated Kept only for backward-compatibility and will be removed in the next major release.
@@ -61,8 +66,27 @@ public class IcebergRequestContext {
     this.remoteHostName = httpRequest.getRemoteHost();
     this.httpHeaders = IcebergRestUtils.getHttpHeaders(httpRequest);
     this.catalogName = catalogName;
-    this.userName = PrincipalUtils.getCurrentUserName();
+
+    // Get the authenticated principal from the HTTP request attribute
+    // This is set by the AuthenticationFilter and matches the behavior in Utils.doAs()
+    UserPrincipal principal =
+        (UserPrincipal)
+            httpRequest.getAttribute(AuthConstants.AUTHENTICATED_PRINCIPAL_ATTRIBUTE_NAME);
+    if (principal == null) {
+      LOG.warn(
+          "No authenticated principal found in HTTP request attribute, falling back to PrincipalUtils.getCurrentUserName()");
+      this.userName = PrincipalUtils.getCurrentUserName();
+    } else {
+      LOG.info("Found authenticated principal: {}", principal.getName());
+      this.userName = principal.getName();
+    }
     this.requestCredentialVending = requestCredentialVending;
+    LOG.info(
+        "User name: {}, Remote host: {}, Catalog: {}, Request for credential vending: {}",
+        this.userName,
+        this.remoteHostName,
+        this.catalogName,
+        requestCredentialVending);
   }
 
   /**

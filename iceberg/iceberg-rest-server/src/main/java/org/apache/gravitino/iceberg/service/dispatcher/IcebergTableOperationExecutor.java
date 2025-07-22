@@ -19,8 +19,11 @@
 
 package org.apache.gravitino.iceberg.service.dispatcher;
 
+import org.apache.gravitino.UserPrincipal;
+import org.apache.gravitino.auth.AuthConstants;
 import org.apache.gravitino.iceberg.service.IcebergCatalogWrapperManager;
 import org.apache.gravitino.listener.api.event.IcebergRequestContext;
+import org.apache.gravitino.utils.PrincipalUtils;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.rest.requests.CreateTableRequest;
@@ -28,9 +31,12 @@ import org.apache.iceberg.rest.requests.RenameTableRequest;
 import org.apache.iceberg.rest.requests.UpdateTableRequest;
 import org.apache.iceberg.rest.responses.ListTablesResponse;
 import org.apache.iceberg.rest.responses.LoadTableResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class IcebergTableOperationExecutor implements IcebergTableOperationDispatcher {
 
+  private static final Logger LOG = LoggerFactory.getLogger(IcebergTableOperationExecutor.class);
   private IcebergCatalogWrapperManager icebergCatalogWrapperManager;
 
   public IcebergTableOperationExecutor(IcebergCatalogWrapperManager icebergCatalogWrapperManager) {
@@ -40,9 +46,40 @@ public class IcebergTableOperationExecutor implements IcebergTableOperationDispa
   @Override
   public LoadTableResponse createTable(
       IcebergRequestContext context, Namespace namespace, CreateTableRequest createTableRequest) {
-    return icebergCatalogWrapperManager
-        .getCatalogWrapper(context.catalogName())
-        .createTable(namespace, createTableRequest, context.requestCredentialVending());
+    try {
+      // Execute the catalog operation within the authenticated user's security context
+      String userName = context.userName();
+      UserPrincipal principal =
+          new UserPrincipal(userName != null ? userName : AuthConstants.ANONYMOUS_USER);
+
+      if (userName == null || AuthConstants.ANONYMOUS_USER.equals(userName)) {
+        LOG.warn(
+            "No authenticated user found, using anonymous user for table creation in catalog: {}, namespace: {}",
+            context.catalogName(),
+            namespace);
+      } else {
+        LOG.info(
+            "Creating table with authenticated user: '{}' in catalog: {}, namespace: {}, table: {}",
+            userName,
+            context.catalogName(),
+            namespace,
+            createTableRequest.name() != null ? createTableRequest.name() : "unknown");
+      }
+
+      return PrincipalUtils.doAs(
+          principal,
+          () -> {
+            LOG.info("Executing createTable operation as user: '{}'", principal.getName());
+            return icebergCatalogWrapperManager
+                .getCatalogWrapper(context.catalogName())
+                .createTable(namespace, createTableRequest, context.requestCredentialVending());
+          });
+    } catch (Exception e) {
+      if (e instanceof RuntimeException) {
+        throw (RuntimeException) e;
+      }
+      throw new RuntimeException("Failed to create table", e);
+    }
   }
 
   @Override
@@ -50,9 +87,25 @@ public class IcebergTableOperationExecutor implements IcebergTableOperationDispa
       IcebergRequestContext context,
       TableIdentifier tableIdentifier,
       UpdateTableRequest updateTableRequest) {
-    return icebergCatalogWrapperManager
-        .getCatalogWrapper(context.catalogName())
-        .updateTable(tableIdentifier, updateTableRequest);
+    try {
+      // Execute the catalog operation within the authenticated user's security context
+      String userName = context.userName();
+      UserPrincipal principal =
+          new UserPrincipal(userName != null ? userName : AuthConstants.ANONYMOUS_USER);
+
+      return PrincipalUtils.doAs(
+          principal,
+          () -> {
+            return icebergCatalogWrapperManager
+                .getCatalogWrapper(context.catalogName())
+                .updateTable(tableIdentifier, updateTableRequest);
+          });
+    } catch (Exception e) {
+      if (e instanceof RuntimeException) {
+        throw (RuntimeException) e;
+      }
+      throw new RuntimeException("Failed to update table", e);
+    }
   }
 
   @Override
