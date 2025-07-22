@@ -32,7 +32,6 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.gravitino.UserPrincipal;
 import org.apache.gravitino.auth.OAuthTokenValidator;
 import org.apache.gravitino.auth.SignatureAlgorithmFamilyType;
@@ -51,16 +50,20 @@ public class DefaultJwtTokenValidator implements OAuthTokenValidator {
 
   @Override
   public void initialize(Map<String, String> config) {
-    this.allowSkewSeconds = Long.parseLong(config.getOrDefault("allow.skew.seconds", "0"));
-    String configuredSignKey = config.get("default.sign.key");
-    String algType = config.get("signature.algorithm.type");
-    this.defaultSigningKey = decodeSignKey(Base64.getDecoder().decode(configuredSignKey), algType);
-  }
+    this.allowSkewSeconds =
+        Long.parseLong(config.getOrDefault("gravitino.authenticator.oauth.allowSkewSecs", "0"));
+    String configuredSignKey = config.get("gravitino.authenticator.oauth.defaultSignKey");
+    String algType = config.get("gravitino.authenticator.oauth.signAlgorithmType");
 
-  @Override
-  public boolean supportsProvider(String provider) {
-    // This validator supports all providers except those with specific implementations
-    return StringUtils.isBlank(provider) || !"azure".equalsIgnoreCase(provider);
+    LOG.debug("Initializing DefaultJwtTokenValidator with allowSkewSeconds: {}", allowSkewSeconds);
+    LOG.debug("Configured sign key present: {}", configuredSignKey != null);
+    LOG.debug("Algorithm type: {}", algType);
+
+    if (configuredSignKey == null) {
+      throw new IllegalArgumentException("Default sign key is required but not configured");
+    }
+
+    this.defaultSigningKey = decodeSignKey(Base64.getDecoder().decode(configuredSignKey), algType);
   }
 
   @Override

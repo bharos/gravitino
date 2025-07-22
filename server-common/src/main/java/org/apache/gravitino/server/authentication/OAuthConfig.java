@@ -109,4 +109,11 @@ public interface OAuthConfig {
           .version(ConfigConstants.VERSION_1_0_0)
           .stringConf()
           .create();
+
+  ConfigEntry<String> PRINCIPAL_FIELD =
+      new ConfigBuilder(OAUTH_CONFIG_PREFIX + "principal-field")
+          .doc("JWT claim field to use as principal identity (e.g., 'sub', 'client_id', 'appid')")
+          .version(ConfigConstants.VERSION_1_0_0)
+          .stringConf()
+          .createWithDefault("sub");
 }

@@ -39,15 +39,18 @@ export async function initMsal() {
 
       msalConfig = {
         auth: {
-          clientId: configs['gravitino.authenticator.oauth.azure.client-id'],
-          authority: configs['gravitino.authenticator.oauth.azure.authority'],
-          redirectUri: configs['gravitino.authenticator.oauth.azure.redirect-uri']
+          clientId: configs['gravitino.authenticator.oauth.client-id'],
+          authority: configs['gravitino.authenticator.oauth.authority'],
+          redirectUri: window.location.origin + '/ui/oauth/callback' // Use a default redirect URI
         },
         cache: {
           cacheLocation: 'localStorage',
           storeAuthStateInCookie: false
-        }
+        },
+        scopes: configs['gravitino.authenticator.oauth.scope'] // Store scopes from backend
       }
+
+      console.log('[MSAL] Created config:', msalConfig)
 
       msalInstance = new PublicClientApplication(msalConfig)
       await msalInstance.initialize()
@@ -92,9 +95,11 @@ export async function getGravitinoAccessToken() {
     return null
   }
 
-  // Use the API scope created by networking admin
-  const apiScopes = [`api://${config.auth.clientId}/access_as_user`]
-  console.info('[MSAL] Requesting token for Gravitino API with scope:', apiScopes[0])
+  // Use scopes from backend configuration
+  const configuredScopes = config.scopes || 'User.Read'
+  const apiScopes = configuredScopes.split(' ').filter(scope => scope.trim())
+
+  console.info('[MSAL] Requesting token for Gravitino API with scopes:', apiScopes)
 
   return await getAccessToken(apiScopes)
 }

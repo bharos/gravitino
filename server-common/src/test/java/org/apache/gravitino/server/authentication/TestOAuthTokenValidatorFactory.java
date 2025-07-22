@@ -40,7 +40,6 @@ public class TestOAuthTokenValidatorFactory {
     OAuthTokenValidator validator = OAuthTokenValidatorFactory.createValidator(null, config);
     assertNotNull(validator);
     assertTrue(validator instanceof DefaultJwtTokenValidator);
-    assertTrue(validator.supportsProvider(null));
   }
 
   @Test

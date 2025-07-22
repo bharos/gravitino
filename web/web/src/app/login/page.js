@@ -21,9 +21,9 @@
 
 import Image from 'next/image'
 import { Roboto } from 'next/font/google'
-import { useEffect } from 'react'import { Box, Card, Grid, Button, CardContent, Typography } from '@mui/material'
+import { Box, Card, Grid, Button, CardContent, Typography } from '@mui/material'
 import { useMsal, AuthenticatedTemplate, UnauthenticatedTemplate } from '@azure/msal-react'
-import { getMsalConfig } from '@/lib/auth/msal'
+import { getMsalConfig, initMsal } from '@/lib/auth/msal'
 
 import clsx from 'clsx'
 import { useAuth } from '@/lib/provider/session'
@@ -76,22 +76,35 @@ const LoginPage = () => {
 function LoginButton() {
   const { instance } = useMsal()
 
-  const handleLogin = () => {
-    const config = getMsalConfig()
-    if (!config) {
-      console.error('[Login] MSAL config not available')
+  const handleLogin = async () => {
+    try {
+      // Make sure MSAL is initialized first
+      await initMsal()
 
-      return
+      const config = getMsalConfig()
+      if (!config) {
+        console.error('[Login] MSAL config not available')
+
+        return
+      }
+
+      console.log('[Login] Using config:', config)
+
+      // Get scopes from backend config, fallback to basic scopes
+      const configuredScopes = config.scopes || 'openid profile email User.Read'
+      const scopeArray = configuredScopes.split(' ').filter(scope => scope.trim())
+
+      // Always include essential OAuth scopes
+      const scopes = ['openid', 'email', 'offline_access', ...scopeArray]
+
+      console.info('[Login] Requesting login with scopes:', scopes)
+
+      instance.loginRedirect({
+        scopes: scopes
+      })
+    } catch (error) {
+      console.error('[Login] Error during login:', error)
     }
-
-    // Include both authentication scopes and API scope for consent
-    const scopes = ['openid', 'email', 'offline_access', 'User.Read', `api://${config.auth.clientId}/access_as_user`]
-
-    console.info('[Login] Requesting login with scopes:', scopes)
-
-    instance.loginRedirect({
-      scopes: scopes
-    })
   }
 
   return (

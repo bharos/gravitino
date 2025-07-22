@@ -36,14 +36,6 @@ public interface OAuthTokenValidator {
   void initialize(Map<String, String> config);
 
   /**
-   * Check if this validator supports the given provider.
-   *
-   * @param provider The OAuth provider name (e.g., "azure", "google")
-   * @return true if this validator supports the provider, false otherwise
-   */
-  boolean supportsProvider(String provider);
-
-  /**
    * Validate the given JWT token and return a Principal if valid.
    *
    * @param token The JWT token to validate
