@@ -39,7 +39,7 @@ import { NextAxios } from './Axios'
 import { checkStatus } from './checkStatus'
 import { useAuth as Auth } from '../../provider/session'
 import { githubApis } from '@/lib/api/github'
-import { getGravitinoAccessToken } from '@/lib/auth/msal'
+import { oauthProviderFactory } from '@/lib/auth/providers/factory'
 
 let isRefreshing = false
 
@@ -192,7 +192,7 @@ const transform = {
    */
   requestInterceptors: async (config, options) => {
     // ** Pre-Request Configuration Handling
-    const token = await getGravitinoAccessToken()
+    const token = await oauthProviderFactory.getAccessToken()
     if (token && config?.requestOptions?.withToken !== false) {
       // ** jwt token
       config.headers.Authorization = options.authenticationScheme ? `${options.authenticationScheme} ${token}` : token

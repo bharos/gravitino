@@ -26,7 +26,7 @@ import { useSearchParams } from 'next/navigation'
 
 import { useAppDispatch } from '@/lib/hooks/useStore'
 import { initialVersion, fetchGitHubInfo } from '@/lib/store/sys'
-import { getGravitinoAccessToken } from '@/lib/auth/msal'
+import { oauthProviderFactory } from '@/lib/auth/providers/factory'
 
 import { to } from '../utils'
 import { getAuthConfigs, setAuthToken } from '../store/auth'
@@ -90,25 +90,17 @@ const AuthProvider = ({ children }) => {
       } else if (authType === 'oauth') {
         let tokenToUse = token
 
-        // Try to get token from MSAL if not present in localStorage
+        // Try to get token from OAuth provider if not present in localStorage
         if (!tokenToUse) {
-          tokenToUse = await getGravitinoAccessToken()
-          if (tokenToUse) {
-            console.info('[AuthProvider] Token obtained from MSAL')
-          } else {
-            console.warn('[AuthProvider] No token found in localStorage or MSAL')
-          }
-        } else {
-          console.info('[AuthProvider] Token obtained from localStorage')
+          tokenToUse = await oauthProviderFactory.getAccessToken()
         }
+
         if (tokenToUse) {
           dispatch(setAuthToken(tokenToUse))
           dispatch(initialVersion())
           dispatch(fetchGitHubInfo())
           goToMetalakeListPage()
         } else {
-          console.log('[AuthProvider] No token found, redirecting to /login  . Path:', window.location.pathname)
-
           if (typeof window !== 'undefined' && window.location.pathname.startsWith('/ui/oauth/callback')) {
             // Do nothing, let the callback page handle it
             return

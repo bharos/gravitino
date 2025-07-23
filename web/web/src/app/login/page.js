@@ -19,26 +19,103 @@
 
 'use client'
 
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Roboto } from 'next/font/google'
-import { Box, Card, Grid, Button, CardContent, Typography } from '@mui/material'
-import { useMsal, AuthenticatedTemplate, UnauthenticatedTemplate } from '@azure/msal-react'
-import { getMsalConfig, initMsal } from '@/lib/auth/msal'
-
+import { useEffect, useState } from 'react'
+import { Box, Card, Grid, CardContent, Typography, Alert } from '@mui/material'
 import clsx from 'clsx'
-import { useAuth } from '@/lib/provider/session'
+
+import AzureLogin from './components/AzureLogin'
+import DefaultLogin from './components/DefaultLogin'
 
 const fonts = Roboto({ subsets: ['latin'], weight: ['400'], display: 'swap' })
 
+// OAuth provider types
+const OAUTH_PROVIDERS = {
+  AZURE: 'azure',
+  GENERIC: 'generic'
+}
+
 const LoginPage = () => {
-  const { authError } = useAuth()
+  const [oauthConfig, setOauthConfig] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    // Fetch OAuth configuration from backend
+    console.log('[LoginPage] Starting to fetch configs...')
+    fetch('/configs')
+      .then(response => {
+        console.log('[LoginPage] Response status:', response.status)
+        console.log('[LoginPage] Response headers:', response.headers)
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        return response.json()
+      })
+      .then(config => {
+        console.log('[LoginPage] OAuth config received:', config)
+        console.log('[LoginPage] Setting oauthConfig and stopping loading...')
+        setOauthConfig(config)
+        setLoading(false)
+        console.log('[LoginPage] Loading state should now be false')
+      })
+      .catch(err => {
+        console.error('[LoginPage] Failed to fetch OAuth config:', err)
+        setError(`Failed to load authentication configuration: ${err.message}`)
+        setLoading(false)
+      })
+  }, [])
+
+  if (loading) {
+    return (
+      <Grid container spacing={2} sx={{ justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+        <Box>
+          <Card sx={{ width: 480 }}>
+            <CardContent className='twc-p-12'>
+              <Typography variant='body1' sx={{ textAlign: 'center' }}>
+                Loading authentication...
+              </Typography>
+              <Typography variant='body2' sx={{ textAlign: 'center', mt: 2, color: 'text.secondary' }}>
+                Fetching OAuth configuration from /configs
+              </Typography>
+              <Typography variant='body2' sx={{ textAlign: 'center', mt: 1, color: 'text.secondary' }}>
+                Check browser console for details
+              </Typography>
+            </CardContent>
+          </Card>
+        </Box>
+      </Grid>
+    )
+  }
+
+  if (error) {
+    return (
+      <Grid container spacing={2} sx={{ justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+        <Box>
+          <Card sx={{ width: 480 }}>
+            <CardContent className='twc-p-12'>
+              <Alert severity='error'>{error}</Alert>
+            </CardContent>
+          </Card>
+        </Box>
+      </Grid>
+    )
+  }
+
+  // Determine OAuth provider
+  const provider = oauthConfig?.['gravitino.authenticator.oauth.provider']?.toLowerCase()
+  console.log('[LoginPage] Determined provider:', provider)
+  console.log('[LoginPage] About to render LoginContent with provider:', provider)
 
   return (
     <Grid container spacing={2} sx={{ justifyContent: 'center', alignItems: 'center', height: '100%' }}>
       <Box>
         <Card sx={{ width: 480 }}>
-          <CardContent className={`twc-p-12`}>
-            <Box className={`twc-mb-8 twc-flex twc-items-center twc-justify-center`}>
+          <CardContent className='twc-p-12'>
+            <Box className='twc-mb-8 twc-flex twc-items-center twc-justify-center'>
               <Image
                 src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/icons/gravitino.svg`}
                 width={24}
@@ -50,22 +127,7 @@ const LoginPage = () => {
               </Typography>
             </Box>
 
-            {/* Auth error display */}
-            {authError && (
-              <Box sx={{ mb: 2, p: 2, bgcolor: 'error.light', borderRadius: 1 }}>
-                <Typography variant='body2' color='error'>
-                  Authentication Error: {authError}
-                </Typography>
-              </Box>
-            )}
-
-            <AuthenticatedTemplate>
-              <Profile />
-              <LogoutButton />
-            </AuthenticatedTemplate>
-            <UnauthenticatedTemplate>
-              <LoginButton />
-            </UnauthenticatedTemplate>
+            <LoginContent provider={provider} oauthConfig={oauthConfig} />
           </CardContent>
         </Card>
       </Box>
@@ -73,66 +135,21 @@ const LoginPage = () => {
   )
 }
 
-function LoginButton() {
-  const { instance } = useMsal()
+// Main login content that switches based on provider
+function LoginContent({ provider, oauthConfig }) {
+  console.log('[LoginContent] Rendering with provider:', provider)
+  console.log('[LoginContent] OAuth config available:', !!oauthConfig)
 
-  const handleLogin = async () => {
-    try {
-      // Make sure MSAL is initialized first
-      await initMsal()
+  switch (provider) {
+    case OAUTH_PROVIDERS.AZURE:
+      console.log('[LoginContent] Rendering AzureLogin component')
 
-      const config = getMsalConfig()
-      if (!config) {
-        console.error('[Login] MSAL config not available')
+      return <AzureLogin oauthConfig={oauthConfig} />
+    default:
+      console.log('[LoginContent] Rendering DefaultLogin component (default case)')
 
-        return
-      }
-
-      console.log('[Login] Using config:', config)
-
-      // Get scopes from backend config, fallback to basic scopes
-      const configuredScopes = config.scopes || 'openid profile email User.Read'
-      const scopeArray = configuredScopes.split(' ').filter(scope => scope.trim())
-
-      // Always include essential OAuth scopes
-      const scopes = ['openid', 'email', 'offline_access', ...scopeArray]
-
-      console.info('[Login] Requesting login with scopes:', scopes)
-
-      instance.loginRedirect({
-        scopes: scopes
-      })
-    } catch (error) {
-      console.error('[Login] Error during login:', error)
-    }
+      return <DefaultLogin oauthConfig={oauthConfig} />
   }
-
-  return (
-    <Button fullWidth size='large' variant='contained' onClick={handleLogin} sx={{ mb: 3, mt: 4 }}>
-      Login with Microsoft
-    </Button>
-  )
-}
-
-function LogoutButton() {
-  const { instance } = useMsal()
-
-  return (
-    <Button fullWidth size='large' variant='outlined' onClick={() => instance.logoutRedirect()} sx={{ mb: 3, mt: 4 }}>
-      Logout
-    </Button>
-  )
-}
-
-function Profile() {
-  const { accounts } = useMsal()
-  const account = accounts[0]
-
-  return account ? (
-    <Typography variant='body2' sx={{ textAlign: 'center', my: 2 }}>
-      Welcome, {account.username}
-    </Typography>
-  ) : null
 }
 
 export default LoginPage

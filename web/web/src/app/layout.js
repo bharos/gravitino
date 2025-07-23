@@ -34,18 +34,18 @@ export const metadata = {
   }
 }
 
-import MsalProviderGate from './msal-provider-gate'
+import OAuthProviderGate from './oauth-provider-gate'
 
 const RootLayout = ({ children }) => (
   <html lang='en' suppressHydrationWarning>
     <body>
-      <MsalProviderGate>
+      <OAuthProviderGate>
         <Provider>
           <NavigationEvents />
           <Layout>{children}</Layout>
         </Provider>
         <StyledToast />
-      </MsalProviderGate>
+      </OAuthProviderGate>
     </body>
   </html>
 )

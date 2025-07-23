@@ -31,6 +31,7 @@ export async function initMsal() {
 
       if (configs['gravitino.authenticator.oauth.provider'] !== 'azure') {
         console.warn('[MSAL] Provider is not azure. Skipping MSAL initialization.')
+        localStorage.setItem('oauthProvider', configs['gravitino.authenticator.oauth.provider'])
         msalConfig = null
         msalInstance = null
 
@@ -88,6 +89,14 @@ export function getMsalConfig() {
 }
 
 export async function getGravitinoAccessToken() {
+  // Check if provider is Azure first
+  const provider = localStorage.getItem('oauthProvider')
+  if (provider !== 'azure') {
+    console.log('[MSAL] Provider is not Azure, skipping MSAL token acquisition')
+
+    return null
+  }
+
   const config = getMsalConfig()
   if (!config) {
     console.error('[MSAL] Config not available.')
