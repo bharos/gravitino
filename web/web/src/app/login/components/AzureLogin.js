@@ -67,8 +67,7 @@ function AzureLoginButton({ oauthConfig }) {
 
       // Get scopes from backend config
       const configuredScopes = config.scopes || 'openid profile email'
-      const scopeArray = configuredScopes.split(' ').filter(scope => scope.trim())
-      const scopes = ['openid', 'email', 'offline_access', ...scopeArray]
+      const scopes = configuredScopes.split(' ').filter(scope => scope.trim())
 
       console.info('[Azure Login] Requesting login with scopes:', scopes)
 
