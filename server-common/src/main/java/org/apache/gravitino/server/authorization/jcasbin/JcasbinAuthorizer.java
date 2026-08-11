@@ -543,9 +543,12 @@ public class JcasbinAuthorizer implements GravitinoAuthorizer {
 
     MetadataObject metadataObject = MetadataObjects.parse(fullName, metadataType);
     do {
-      if (isOwner(currentPrincipal, metalake, metadataObject, requestContext)) {
-        return hasParentUsagePermission(
-            currentPrincipal, metalake, metadataObject, metalakeObject, requestContext);
+      // A failed usage check only rules out this level: the principal may still own an ancestor
+      // that grants the permission on its own, so keep walking instead of returning early.
+      if (isOwner(currentPrincipal, metalake, metadataObject, requestContext)
+          && hasParentUsagePermission(
+              currentPrincipal, metalake, metadataObject, metalakeObject, requestContext)) {
+        return true;
       }
     } while ((metadataObject = MetadataObjects.parent(metadataObject)) != null);
     return false;

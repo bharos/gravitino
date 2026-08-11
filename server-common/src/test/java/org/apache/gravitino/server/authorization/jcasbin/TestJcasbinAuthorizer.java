@@ -120,6 +120,8 @@ public class TestJcasbinAuthorizer {
 
   private static final Long CATALOG_ID = 4L;
 
+  private static final Long SCHEMA_ID = 7L;
+
   private static final String USERNAME = "tester";
 
   private static final String METALAKE = "testMetalake";
@@ -2303,6 +2305,44 @@ public class TestJcasbinAuthorizer {
         jcasbinAuthorizer.hasSetOwnerPermission(
             METALAKE, "CATALOG", "testCatalog", new AuthorizationRequestContext()),
         "Catalog owner should be able to set owner without checking DENY USE_CATALOG");
+  }
+
+  @Test
+  public void testHasSetOwnerPermissionAllowsOwnerOfBothCatalogAndSchema() throws Exception {
+    makeCompletableFutureUseCurrentThread(jcasbinAuthorizer);
+    // The shared catch-all id stub maps every object to CATALOG_ID, which would collapse the
+    // metalake, catalog and schema onto a single owner-cache entry, so give each level its own id.
+    metadataIdConverterMockedStatic
+        .when(() -> MetadataIdConverter.getID(any(), eq(METALAKE)))
+        .thenAnswer(
+            invocation -> {
+              MetadataObject object = invocation.getArgument(0);
+              switch (object.type()) {
+                case METALAKE:
+                  return Optional.of(USER_METALAKE_ID);
+                case SCHEMA:
+                  return Optional.of(SCHEMA_ID);
+                default:
+                  return Optional.of(CATALOG_ID);
+              }
+            });
+    try {
+      mockNoDirectUserRoles();
+      when(ownerMetaMapper.selectOwnerByMetadataObjectIdAndType(eq(SCHEMA_ID), eq("SCHEMA")))
+          .thenReturn(new OwnerInfo(USER_ID, "USER"));
+      when(ownerMetaMapper.selectOwnerByMetadataObjectIdAndType(eq(CATALOG_ID), eq("CATALOG")))
+          .thenReturn(new OwnerInfo(USER_ID, "USER"));
+      getOwnerRelCache(jcasbinAuthorizer).invalidateAll();
+
+      assertTrue(
+          jcasbinAuthorizer.hasSetOwnerPermission(
+              METALAKE, "SCHEMA", "testCatalog.testSchema", new AuthorizationRequestContext()),
+          "Catalog ownership should still apply to a schema the user also owns");
+    } finally {
+      metadataIdConverterMockedStatic
+          .when(() -> MetadataIdConverter.getID(any(), eq(METALAKE)))
+          .thenReturn(Optional.of(CATALOG_ID));
+    }
   }
 
   /**
