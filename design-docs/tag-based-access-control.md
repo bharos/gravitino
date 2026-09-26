@@ -379,7 +379,7 @@ See [OQ-1](#oq-1--where-tags-are-evaluated).
 ### List filtering
 
 List endpoints filter their results through the same authorizer, so tag-derived permissions must be
-visible to filtering as well as to point decisions.
+visible to filtering as well as to single-object checks.
 
 Filtering has a fast path today: `allVisibleViaParentScope` skips the per-object loop entirely when
 a parent-scope grant makes every candidate visible and no object-level deny exists. Tags only add
@@ -395,8 +395,8 @@ the loop already has.
 
 ### Cost
 
-The feature is off by default, and the gate sits on evaluation, so a deployment that leaves it off
-pays nothing and the rest of this section does not apply to it. See
+The feature is off by default, and while off the authorizer does not consult tags at all, so a
+deployment that leaves it off pays nothing and the rest of this section does not apply to it. See
 [Enabling the feature](#enabling-the-feature).
 
 With it on, tags are consulted only when the RBAC rows do not already allow, so a check RBAC grants
@@ -548,32 +548,31 @@ See [OQ-4](#oq-4--authority-to-confer-access-through-a-tag).
 
 ### Enabling the feature
 
-A server-level configuration gates the feature, and it defaults to off.
+One server-level configuration turns tag-based access on or off. It defaults to off. No dry-run or
+audit-only mode is proposed for v1.
 
-The gate sits on evaluation, not on storage. With it off, policies can still be created, validated
-and bound to tags, and tags can still be applied — every write path in this section works, and
-every authority check on it still applies. The evaluator never consults the result, so no tag
-confers access. That is not a dry run: nothing is evaluated, so nothing is reported. The
-configuration is inert rather than observed.
+**Off.** Policies and tags behave as they do today: they can be created, bound to each other and
+applied to objects, each still requiring the authority in the table above. The authorizer never
+reads them, so no tag grants anyone anything.
 
-Two consequences are worth stating plainly:
+**On.** The authorizer consults tags — both when deciding access to a single object and when
+filtering a list. It is both or neither: enforcing only one would either grant a caller access to
+objects that never appear in their listings, or list objects they are then denied.
 
-- **Turning it off revokes.** Access held only through a tag disappears at once. The direction is
-  safe — nothing gains access — but callers experience a revocation, not a pause.
-- **Turning it on confers everything authored while it was off.** That access was not granted
-  unchecked: the write-path authority checks run at bind time, so whoever bound a policy to a tag
-  held the authority to confer it. The flag decides when a delegation takes effect, not whether it
-  was authorised.
+A metalake with no `system_access_control` policy already confers nothing, so the flag is not what
+makes the feature opt-in. It is a kill switch. This adds a new path to the authorization hot path,
+and an operator who needs it gone — a wrong decision, or list filtering degrading under
+[Cost](#cost) — should not have to unbind policies one at a time to get there.
 
-On means fully on. Enforcing at point checks but not in list filtering would leave a caller holding
-access to objects that never appear in their listings; the reverse lists objects that are then
-denied. Neither leaks data, since tags only add access, but neither is worth building.
+Flipping it either way takes effect immediately:
 
-A dry run — evaluate, log what the tag path would have granted, return the RBAC answer regardless —
-is a third mode rather than this one. Because tags only add access, its output can only ever be
-grants that would newly apply, which makes it a useful way to review a configuration before
-enabling it. It pays the full request-path cost for no functional benefit, so it is a diagnostic
-rather than a resting state, and nothing below depends on it.
+- **On to off revokes.** Access held only through a tag disappears at once. Nothing gains access,
+  but callers see a revocation rather than a pause.
+- **Off to on grants everything authored while it was off.** The authority checks ran when each
+  policy was bound, so that access was authorized. The flag decides when it takes effect, not
+  whether it was allowed.
+
+The flag is server-wide, so turning it off affects every metalake.
 
 ---
 
