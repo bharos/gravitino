@@ -485,14 +485,14 @@ USE_SCHEMA    on lakehouse.finance    from RBAC
 SELECT_TABLE  on the table            from RBAC or from a tag rule
 ```
 
-Two reasons. Tagging a leaf would otherwise widen access to its containers as a side effect, which
-is a larger grant than the tagging operation appears to be. And the owner of a schema would lose
-the ability to decide who may enter it, because anyone able to apply a tag could confer entry.
-
 **Tag-based access is additive within territory a role already has, not a way to hand out new
 territory.** For `analyst` to read `lakehouse.finance.orders` through `certified`, the role must
 already hold `USE_CATALOG` on `lakehouse` and `USE_SCHEMA` on `finance`. A tag applied to a table in
 a schema the role cannot enter has no effect. `validate()` rejects both names in `privileges`.
+
+That containment is what makes the worst case analyzable. The most a misapplied tag can do is
+expose an object the role could already traverse to, which scopes the blast radius to the
+territory its RBAC grants already describe rather than to the whole metalake.
 
 ### Allow and deny
 
